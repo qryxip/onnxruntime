@@ -20,8 +20,6 @@
 #include "core/providers/cuda/cuda_common.h"
 #include "core/providers/cuda/cu_inc/common.cuh"
 
-using namespace onnxruntime::cuda;
-
 namespace onnxruntime {
 namespace contrib {
 namespace cuda {
@@ -45,6 +43,7 @@ struct Float4_ {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace {
+using namespace onnxruntime::cuda;
 struct __align__(8) Half4 {
   half2 x;
   half2 y;
