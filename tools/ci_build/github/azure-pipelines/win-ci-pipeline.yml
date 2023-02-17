@@ -223,6 +223,7 @@ stages:
       buildArch: x64
       msbuildPlatform: arm
       packageName: arm
+      ort_build_pool_name: 'Win-CPU-2019'
       buildparameter: --arm --use_cache --arm --enable_lto --disable_rtti --path_to_protoc_exe $(Build.BinariesDirectory)\RelWithDebInfo\installed\bin\protoc.exe
       runTests: false
       buildJava: false
