@@ -214,7 +214,7 @@ stages:
 - stage: x64_release_arm
   dependsOn: []
   jobs:
-  - template: win-ci.yml
+  - template: templates/win-ci.yml
     parameters:
       DoCompliance: false
       DoEsrp: false
