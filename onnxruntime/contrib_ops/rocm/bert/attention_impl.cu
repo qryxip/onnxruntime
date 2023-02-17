@@ -172,26 +172,13 @@ struct GemmSoftmaxGemmPermuteGenericPipeline {
     // Raw attention mask could be 2D (BxS) or 3D (BxSxS*) or 4D(Bx1xMxM), where M is the max sequence length.
     auto attn = params->attention;
     auto [buffer, strides] = GetRawMaskBufferAndStrides(params);
-    T* persistent_softmax_workspace = params->gemm1_out;  // replace Q*K' in place if persistent softmax is selected.
+    // replace Q*K' in place if persistent softmax is selected.
+    T* persistent_softmax_workspace = use_persistent_softmax ? params->gemm1_out: nullptr;
     return ComputeSoftmaxWithRawMask<T>(
         params->Stream(), attn->total_sequence_length, attn->sequence_length, attn->batch_size, attn->num_heads,
         strides, buffer, nullptr, relative_position_bias, params->gemm1_out, params->softmax_out,
         attn->is_unidirectional, /* FIXME: this must not be attn.scale! */ params->scale,
         use_persistent_softmax, persistent_softmax_workspace, attn->mask_filter_value);
-  }
-
-  static Status SoftmaxRawMaskRestrictive(const GemmSoftmaxGemmPermuteParams<T>* params) {
-    // Softmax on [m,n] along the n dimension.
-    // Raw attention mask could be 2D (BxS) or 3D (BxSxS*) or 4D(Bx1xMxM), where M is the max sequence length.
-    auto attn = params->attention;
-    auto [buffer, strides] = GetRawMaskBufferAndStrides(params);
-
-    T* persistent_softmax_workspace = params->gemm1_out;  // replace Q*K' in place if persistent softmax is selected.
-    ORT_RETURN_IF_ERROR(ComputeSoftmaxWithRawMask<T>(
-        params->Stream(), attn->total_sequence_length, attn->sequence_length, attn->batch_size, attn->num_heads,
-        strides, buffer, nullptr, /*relative_position_bias*/ nullptr, params->gemm1_out, params->softmax_out,
-        attn->is_unidirectional, /* FIXME: this must not be attn.scale! */ params->scale,
-        /*use_persistent_softmax*/ false, /*persistent_softmax_workspace*/ nullptr, attn->mask_filter_value));
   }
 
   static Status Softmax1DIndexMask(
@@ -260,10 +247,45 @@ Status GemmSoftmaxGemmPermuteGeneric(
   }
 
   ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
-
   ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
   return Status::OK();
 }
+
+// template <typename T>
+// Status GemmSoftmaxGemmPermuteRawMaskRestrictive(const GemmSoftmaxGemmPermuteParams<T>* params) {
+//   using Pipeline = GemmSoftmaxGemmPermuteGenericPipeline<T>;
+//   TUNABLE_OP_RETURN_UNSUPPORTED_ARGUMENT_IF(
+//       !Pipeline::UseRawAttentionMask(params), "This pipeline only support softmax with raw attention mask");
+
+//   ORT_RETURN_IF_ERROR(Pipeline::Gemm1(params));
+//   ORT_RETURN_IF_ERROR(Pipeline::SoftmaxRawMaskRestrictive(params));
+//   ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
+//   ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
+//   return Status::OK();
+// }
+
+// template <typename T>
+// Status GemmSoftmaxGemmPermuteNoMaskRestrictive(const GemmSoftmaxGemmPermuteParams<T>* params) {
+//   using Pipeline = GemmSoftmaxGemmPermuteGenericPipeline<T>;
+//   TUNABLE_OP_RETURN_UNSUPPORTED_ARGUMENT_IF(
+//     params->mask_index_buffer == nullptr, "This pipeline only support softmax without attention mask");
+
+//   ORT_RETURN_IF_ERROR(Pipeline::Gemm1(params));
+//   ORT_RETURN_IF_ERROR(Pipeline::SoftmaxNoMask(params, nullptr));
+//   ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
+//   ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
+//   return Status::OK();
+// }
+
+template<typename T>
+class GemmSoftmaxGemmPermuteTunableOp : public tunable::TunableOp<GemmSoftmaxGemmPermuteParams<T>> {
+ public:
+  GemmSoftmaxGemmPermuteTunableOp() {
+    this->RegisterOp([](const GemmSoftmaxGemmPermuteParams<T>* params) {
+      return GemmSoftmaxGemmPermuteGeneric<T>(params, nullptr, false);
+    });
+  }
+};
 
 template <typename T>
 Status DecoderQkvToContext(
@@ -700,10 +722,15 @@ Status Attention<T>::ComputeInternal(OpKernelContext* context) const {
     params.gemm2_out = scratch3;
   }
 
-  return GemmSoftmaxGemmPermuteGeneric(
-      &gemm_softmax_gemm_permute_params,
-      nullptr == relative_position_bias ? nullptr : reinterpret_cast<const HipT*>(relative_position_bias->DataRaw()),
-      use_persistent_softmax);
+  if (this->GetTuningContext()->IsTunableOpEnabled() && relative_position_bias == nullptr && !use_persistent_softmax) {
+    return GemmSoftmaxGemmPermuteTunableOp<HipT>{}(&gemm_softmax_gemm_permute_params);
+  }
+  else {
+    return GemmSoftmaxGemmPermuteGeneric(
+        &gemm_softmax_gemm_permute_params,
+        nullptr == relative_position_bias ? nullptr : reinterpret_cast<const HipT*>(relative_position_bias->DataRaw()),
+        use_persistent_softmax);
+  }
 }
 
 
