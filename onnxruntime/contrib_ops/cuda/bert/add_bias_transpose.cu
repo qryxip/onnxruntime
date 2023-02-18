@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 #include "core/providers/cuda/cuda_common.h"
-// #include "core/providers/cuda/cu_inc/common.cuh"
+#include "core/providers/cuda/cu_inc/common.cuh"
 #include "contrib_ops/cuda/bert/add_bias_transpose.h"
 #include "contrib_ops/cuda/bert/rotary_embedding_util.h"
 
@@ -241,6 +241,7 @@ __global__ void AddBiasTransposeQKV(int M, const T* input, const T* biases, T* o
   }
 }
 
+
 template <typename T>
 __global__ void AddBiasTransposeQKV(int M, const T* input, const T* biases, T* output, T* qkv_add_bias,
                                     const int rotary_embedding_dim, const int head_size, const int step,
@@ -366,6 +367,7 @@ __global__ void AddBiasTransposeQKV(int M, const T* input, const T* biases, T* o
     }
   }
 }
+
 
 // this suppose 3 matrix in total
 template <typename T>
@@ -651,6 +653,7 @@ void InvokeAddBiasTranspose(
   assert(num_heads <= max_threads_per_block);
 
   if (do_rotary) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 520
     if (format != 1 && format != 3) {
       ORT_THROW("format must be 1 or 3 for rotary attention");
     }
@@ -663,10 +666,13 @@ void InvokeAddBiasTranspose(
 
     const dim3 grid(sequence_length, num_heads, batch_size);
     const dim3 block((qk_head_size / 2 + 31) / 32 * 32, 1, 1);
+
     AddBiasTransposeQKV<T><<<grid, block, smem_size, stream>>>(total_matrix_count, input, biases, output,
                                                                qkv_add_bias, qk_head_size, qk_head_size,
                                                                step, format);
+#endif
     return;
+
   }
 
   const dim3 grid(sequence_length, batch_size, num_matrices);
