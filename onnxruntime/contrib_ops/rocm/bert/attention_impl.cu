@@ -234,55 +234,26 @@ struct GemmSoftmaxGemmPermuteGenericPipeline {
         attn->sequence_length, attn->batch_size, attn->head_size, attn->num_heads,
         params->device_prop->maxThreadsPerBlock, false, params->gemm2_out, params->out_buffer);
   }
-};
 
-template <typename T>
-Status GemmSoftmaxGemmPermuteGeneric(
+  static Status Run(
     const GemmSoftmaxGemmPermuteParams<T>* params,
     const T* relative_position_bias,
     bool use_persistent_softmax) {
-  using Pipeline = GemmSoftmaxGemmPermuteGenericPipeline<T>;
+      ORT_RETURN_IF_ERROR(Gemm1(params));
 
-  ORT_RETURN_IF_ERROR(Pipeline::Gemm1(params));
+      if (UseRawAttentionMask(params)) {
+        ORT_RETURN_IF_ERROR(SoftmaxRawMask(params, relative_position_bias, use_persistent_softmax));
+      } else if (params->mask_index_dims.size() == 1) {  // 1d index mask
+        ORT_RETURN_IF_ERROR(Softmax1DIndexMask(params, relative_position_bias));
+      } else {
+        ORT_RETURN_IF_ERROR(SoftmaxNoMask(params, relative_position_bias));
+      }
 
-  if (Pipeline::UseRawAttentionMask(params)) {
-    ORT_RETURN_IF_ERROR(Pipeline::SoftmaxRawMask(params, relative_position_bias, use_persistent_softmax));
-  } else if (params->mask_index_dims.size() == 1) {  // 1d index mask
-    ORT_RETURN_IF_ERROR(Pipeline::Softmax1DIndexMask(params, relative_position_bias));
-  } else {
-    ORT_RETURN_IF_ERROR(Pipeline::SoftmaxNoMask(params, relative_position_bias));
-  }
-
-  ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
-  ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
-  return Status::OK();
-}
-
-// template <typename T>
-// Status GemmSoftmaxGemmPermuteRawMaskRestrictive(const GemmSoftmaxGemmPermuteParams<T>* params) {
-//   using Pipeline = GemmSoftmaxGemmPermuteGenericPipeline<T>;
-//   TUNABLE_OP_RETURN_UNSUPPORTED_ARGUMENT_IF(
-//       !Pipeline::UseRawAttentionMask(params), "This pipeline only support softmax with raw attention mask");
-
-//   ORT_RETURN_IF_ERROR(Pipeline::Gemm1(params));
-//   ORT_RETURN_IF_ERROR(Pipeline::SoftmaxRawMaskRestrictive(params));
-//   ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
-//   ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
-//   return Status::OK();
-// }
-
-// template <typename T>
-// Status GemmSoftmaxGemmPermuteNoMaskRestrictive(const GemmSoftmaxGemmPermuteParams<T>* params) {
-//   using Pipeline = GemmSoftmaxGemmPermuteGenericPipeline<T>;
-//   TUNABLE_OP_RETURN_UNSUPPORTED_ARGUMENT_IF(
-//     params->mask_index_buffer == nullptr, "This pipeline only support softmax without attention mask");
-
-//   ORT_RETURN_IF_ERROR(Pipeline::Gemm1(params));
-//   ORT_RETURN_IF_ERROR(Pipeline::SoftmaxNoMask(params, nullptr));
-//   ORT_RETURN_IF_ERROR(Pipeline::Gemm2(params));
-//   ORT_RETURN_IF_ERROR(Pipeline::Permute0213(params));
-//   return Status::OK();
-// }
+      ORT_RETURN_IF_ERROR(Gemm2(params));
+      ORT_RETURN_IF_ERROR(Permute0213(params));
+      return Status::OK();
+    }
+};
 
 namespace {
 template <typename T>
@@ -429,7 +400,7 @@ class GemmSoftmaxGemmPermuteTunableOp : public tunable::TunableOp<GemmSoftmaxGem
  public:
   GemmSoftmaxGemmPermuteTunableOp() {
     this->RegisterOp([](const GemmSoftmaxGemmPermuteParams<T>* params) {
-      return GemmSoftmaxGemmPermuteGeneric<T>(params, nullptr, false);
+      return GemmSoftmaxGemmPermuteGenericPipeline<T>::Run(params, nullptr, false);
     });
 
     for (auto&& [_, op]: GetCKGemmSoftmaxGemmPermuteTypeStringAndOps<T, true>()) {
@@ -884,7 +855,7 @@ Status Attention<T>::ComputeInternal(OpKernelContext* context) const {
     return GemmSoftmaxGemmPermuteTunableOp<HipT>{}(&gemm_softmax_gemm_permute_params);
   }
   else {
-    return GemmSoftmaxGemmPermuteGeneric(
+    return GemmSoftmaxGemmPermuteGenericPipeline<HipT>::Run(
         &gemm_softmax_gemm_permute_params,
         nullptr == relative_position_bias ? nullptr : reinterpret_cast<const HipT*>(relative_position_bias->DataRaw()),
         use_persistent_softmax);
