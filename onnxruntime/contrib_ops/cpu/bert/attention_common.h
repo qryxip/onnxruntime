@@ -25,7 +25,7 @@ enum AttentionQkvFormat {
   Q_KV_BSNH_BSN2H,       // for TRT fused cross attention, kv are packed
 };
 
-enum AttentionKernelType{
+enum AttentionKernelType {
   AttentionKernel_Unfused,
   AttentionKernel_TrtFusedAttention,
   AttentionKernel_TrtFlashAttention,
@@ -38,21 +38,36 @@ enum AttentionKernelType{
 struct AttentionParameters {
   int batch_size;
   int sequence_length;
-  int kv_sequence_length;            // input sequence length of K or V
-  int past_sequence_length;          // sequence length in past state of K or V
-  int total_sequence_length;         // total sequence length of K or V
-  int max_sequence_length;           // max sequence length from 4D mask
-  int input_hidden_size;             // first dimension of weights for input projection
-  int hidden_size;                   // hidden size of Q or K
-  int head_size;                     // hidden size per head of Q or K
-  int v_hidden_size;                 // hidden size of V
-  int v_head_size;                   // hidden size per head of V
+  int kv_sequence_length;     // input sequence length of K or V
+  int past_sequence_length;   // sequence length in past state of K or V
+  int total_sequence_length;  // total sequence length of K or V
+  int max_sequence_length;    // max sequence length from 4D mask
+  int input_hidden_size;      // first dimension of weights for input projection
+  int hidden_size;            // hidden size of Q or K
+  int head_size;              // hidden size per head of Q or K
+  int v_hidden_size;          // hidden size of V
+  int v_head_size;            // hidden size per head of V
   int num_heads;
   bool is_unidirectional;
   bool past_present_share_buffer;
   float mask_filter_value;
   float scale;
   AttentionMaskType mask_type;
+};
+
+// Parameters deduced from node attributes and inputs/outputs.
+struct PackedAttentionParameters {
+  int batch_size;
+  int sequence_length;
+  int input_hidden_size;  // first dimension of weights for input projection
+  int hidden_size;        // hidden size of Q or K
+  int head_size;          // hidden size per head of Q or K
+  int v_hidden_size;      // hidden size of V
+  int v_head_size;        // hidden size per head of V
+  int num_heads;
+  float mask_filter_value;
+  float scale;
+  int token_count;
 };
 
 namespace attention {
