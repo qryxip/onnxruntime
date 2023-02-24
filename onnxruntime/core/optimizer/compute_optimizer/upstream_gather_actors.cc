@@ -8,8 +8,7 @@
 #include "core/graph/graph_utils.h"
 #include "core/optimizer/initializer.h"
 #include "core/optimizer/utils.h"
-#include "core/optimizer/compute_optimizer/passthrough_actors.h"
-#include "core/optimizer/compute_optimizer/compute_optimizer.h"
+#include "core/optimizer/compute_optimizer/upstream_gather_actors.h"
 
 using namespace ONNX_NAMESPACE;
 using namespace ::onnxruntime::common;
@@ -511,14 +510,14 @@ void AdaptInputAndOutputForScalarSlice(Graph& graph, Node& current_node, int cur
   current_node.MutableOutputDefs()[0]->SetShape(CreateTensorShapeInsertDimAtAxis(matmul_out_shape, slice_axis, 1));
 }
 
-bool DefaultOperatorPassThroughActorBase::PostProcess(
+bool DefaultUpStreamGatherOperatorActorBase::PostProcess(
     Graph& graph, Node& current_node, int current_node_output_index,
     int slice_axis, bool is_slice_scalar, bool input_has_dim_1_for_axis,
     const ONNX_NAMESPACE::TensorShapeProto_Dimension& /*output_dim_on_axis*/,
     const std::string& entry_node_name,
     const std::unordered_map<int, SliceInfo>& new_gather_infos,
     const logging::Logger& logger) {
-  LOG_DEBUG_INFO(logger, "Enter DefaultOperatorPassThroughActorBase::PostProcess for Node " + current_node.Name() +
+  LOG_DEBUG_INFO(logger, "Enter DefaultUpStreamGatherOperatorActorBase::PostProcess for Node " + current_node.Name() +
                              "(" + current_node.OpType() + ")");
   if (is_slice_scalar && input_has_dim_1_for_axis) {
     AdaptInputAndOutputForScalarSlice(graph, current_node, current_node_output_index, slice_axis,
