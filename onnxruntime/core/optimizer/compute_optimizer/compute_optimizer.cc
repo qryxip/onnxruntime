@@ -9,7 +9,7 @@
 #include "core/optimizer/initializer.h"
 #include "core/optimizer/utils.h"
 #include "core/optimizer/compute_optimizer/upstream_gather_actors.h"
-#include "core/optimizer/compute_optimizer/upstream_gather_transformer.h"
+#include "core/optimizer/compute_optimizer/compute_optimizer.h"
 
 using namespace onnxruntime::optimizer::compute_optimizer;
 namespace onnxruntime {
