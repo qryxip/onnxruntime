@@ -3,8 +3,9 @@
 #pragma once
 
 #include "onnxruntime_c_api.h"
-
 #include <memory>
+
+#include "core/framework/onnxruntime_typeinfo.h"
 
 namespace ONNX_NAMESPACE {
 class TypeProto;
@@ -12,13 +13,17 @@ class TypeProto;
 
 struct OrtSequenceTypeInfo {
  public:
-  explicit OrtSequenceTypeInfo(OrtTypeInfo* sequence_key_type) noexcept;
 
-  std::unique_ptr<OrtTypeInfo, decltype(OrtApi::ReleaseTypeInfo)> sequence_key_type_;
+  using Ptr = std::unique_ptr<OrtSequenceTypeInfo>;
 
-  OrtStatus* Clone(OrtSequenceTypeInfo** out);
+  explicit OrtSequenceTypeInfo(OrtTypeInfo::Ptr sequence_key_type) noexcept;
+  ~OrtSequenceTypeInfo();
 
-  static OrtStatus* FromTypeProto(const ONNX_NAMESPACE::TypeProto*, OrtSequenceTypeInfo** out);
+  OrtTypeInfo::Ptr sequence_key_type_;
+
+  Ptr Clone() const;
+
+  static Ptr FromTypeProto(const ONNX_NAMESPACE::TypeProto*);
 
  private:
   OrtSequenceTypeInfo(const OrtSequenceTypeInfo& other) = delete;
