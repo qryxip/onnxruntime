@@ -13,7 +13,7 @@ use std::{
 /// WARNING: If version is changed, bindings for all platforms will have to be re-generated.
 ///          To do so, run this:
 ///              cargo build --package onnxruntime-sys --features generate-bindings
-const ORT_VERSION: &str = include_str!("../../VERSION_NUMBER");
+const ORT_VERSION: &str = "1.14.1";
 
 /// Base Url from which to download pre-built releases/
 const ORT_RELEASE_BASE_URL: &str = "https://github.com/microsoft/onnxruntime/releases/download";
@@ -58,23 +58,9 @@ fn main() {
 }
 
 fn generate_bindings(include_dir: &Path) {
-    let clang_args = &[
-        format!("-I{}", include_dir.display()),
-        format!(
-            "-I{}",
-            include_dir
-                .join("onnxruntime")
-                .join("core")
-                .join("session")
-                .display()
-        ),
-    ];
+    let clang_args = &[format!("-I{}", include_dir.display())];
 
-    let path = include_dir
-        .join("onnxruntime")
-        .join("core")
-        .join("session")
-        .join("onnxruntime_c_api.h");
+    let path = include_dir.join("onnxruntime_c_api.h");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
@@ -401,7 +387,7 @@ fn prepare_libort_dir() -> PathBuf {
         strategy.as_ref().map_or_else(|_| "unknown", String::as_str)
     );
     match strategy.as_ref().map(String::as_str) {
-        Ok("download") => prepare_libort_dir_prebuilt(),
+        Ok("download") | Err(_) => prepare_libort_dir_prebuilt(),
         Ok("system") => PathBuf::from(match env::var(ORT_RUST_ENV_SYSTEM_LIB_LOCATION) {
             Ok(p) => p,
             Err(e) => {
@@ -411,7 +397,7 @@ fn prepare_libort_dir() -> PathBuf {
                 );
             }
         }),
-        Ok("compile") | Err(_) => prepare_libort_dir_compiled(),
+        Ok("compile") => prepare_libort_dir_compiled(),
         _ => panic!("Unknown value for {:?}", ORT_RUST_ENV_STRATEGY),
     }
 }
