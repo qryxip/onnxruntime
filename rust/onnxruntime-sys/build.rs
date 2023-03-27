@@ -58,9 +58,23 @@ fn main() {
 }
 
 fn generate_bindings(include_dir: &Path) {
-    let clang_args = &[format!("-I{}", include_dir.display())];
+    let clang_args = &[
+        format!("-I{}", include_dir.display()),
+        //format!(
+        //    "-I{}",
+        //    include_dir
+        //        .join("onnxruntime")
+        //        .join("core")
+        //        .join("session")
+        //        .display()
+        //),
+    ];
 
-    let path = include_dir.join("onnxruntime_c_api.h");
+    let path = include_dir
+        //.join("onnxruntime")
+        //.join("core")
+        //.join("session")
+        .join("onnxruntime_c_api.h");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
