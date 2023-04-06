@@ -60,14 +60,14 @@ fn main() {
 fn generate_bindings(include_dir: &Path) {
     let clang_args = &[
         format!("-I{}", include_dir.display()),
-        //format!(
-        //    "-I{}",
-        //    include_dir
-        //        .join("onnxruntime")
-        //        .join("core")
-        //        .join("session")
-        //        .display()
-        //),
+        format!(
+            "-I{}",
+            include_dir
+                .join("onnxruntime")
+                .join("core")
+                .join("session")
+                .display()
+        ),
     ];
 
     let path = include_dir
