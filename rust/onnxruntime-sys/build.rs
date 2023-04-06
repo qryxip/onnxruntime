@@ -411,7 +411,10 @@ fn prepare_libort_dir() -> PathBuf {
                 );
             }
         }),
-        Ok("compile") => prepare_libort_dir_compiled(),
+        Ok("compile") => panic!(
+            "`ORT_RUST_STRATEGY=compile` is currently unavailable. See \
+             https://github.com/VOICEVOX/onnxruntime/pull/2#discussion_r1150638175",
+        ),
         _ => panic!("Unknown value for {:?}", ORT_RUST_ENV_STRATEGY),
     }
 }
