@@ -6,7 +6,7 @@ on:
 
 jobs:
   merge-upstream:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.event.label.name == 'ff-merge'
 
     steps:
