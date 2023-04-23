@@ -1,6 +1,6 @@
 # PRに`ff-merge`というラベルを付けると、このworkflowが起動して`--ff-only`なマージが行われる。
 #
-# microsoft/onnxruntimeの変更を、単純なコミットログの状態で取り込むことが目的。
+# microsoft/onnxruntimeの変更を、CIのチェックとレビューを通し、かつ単純なコミットログの状態で取り込むことが目的。
 # microsoft/onnxruntimeのブランチ/タグを`git merge`したものをPRとして出し、それをこのworkflowで対象ブランチに取り込む。
 
 name: FF merge
