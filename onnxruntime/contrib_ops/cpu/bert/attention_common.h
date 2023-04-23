@@ -19,17 +19,18 @@ enum AttentionMaskType {
 
 enum AttentionQkvFormat {
   Q_K_V_BNSH,            // for unfused attention
-  Q_K_V_BSNH,            // input format of query, key and value for MultiHeadAttention
+  Q_K_V_BSNH,            // for memory efficient attention, or format of query, key and value for MultiHeadAttention
   QKV_BSN3H,             // for TRT fused attention, qkv are packed
   Q_K_V_BNSH_QKV_BS3NH,  // for TRT fused causal attention, data has two formats (qkv is 3BNSH, gemm_buffer is BS3NH)
   Q_KV_BSNH_BSN2H,       // for TRT fused cross attention, kv are packed
 };
 
-enum AttentionKernelType{
+enum AttentionKernelType {
   AttentionKernel_Unfused,
   AttentionKernel_TrtFusedAttention,
   AttentionKernel_TrtFlashAttention,
   AttentionKernel_TrtFusedCrossAttention,
+  AttentionKernel_CutlassMemoryEfficientAttention,
   AttentionKernel_Default
 };
 
@@ -39,6 +40,7 @@ struct AttentionParameters {
   int sequence_length;
   int kv_sequence_length;            // input sequence length of K or V
   int past_sequence_length;          // sequence length in past state of K or V
+  int original_past_sequence_length; // original sequence length in past state of K or V
   int total_sequence_length;         // total sequence length of K or V
   int max_sequence_length;           // max sequence length from 4D mask
   int input_hidden_size;             // first dimension of weights for input projection
@@ -49,20 +51,31 @@ struct AttentionParameters {
   int num_heads;
   bool is_unidirectional;
   bool past_present_share_buffer;
+  bool do_rotary;
   float mask_filter_value;
   float scale;
   AttentionMaskType mask_type;
 };
 
 namespace attention {
-// Environment variable to enable or disable fused self/causal attention kernel. Default is 0 (enabled).
-constexpr const char* kDisableFusedAttention = "ORT_DISABLE_FUSED_ATTENTION";
+// Environment variable to enable or disable TRT fused self attention kernel. Default is 0 (enabled).
+constexpr const char* kDisableFusedSelfAttention = "ORT_DISABLE_FUSED_ATTENTION";
 
 // Environment variable to enable or disable fused cross attention kernel. Default is 0 (enabled).
 constexpr const char* kDisableFusedCrossAttention = "ORT_DISABLE_FUSED_CROSS_ATTENTION";
 
-// Environment variable to enable or disable flash attention. Default is 0 (enabled).
-constexpr const char* kDisableFlashAttention = "ORT_DISABLE_FLASH_ATTENTION";
+// Environment variable to enable or disable TRT fused causal attention kernels. Default is 0 (disabled).
+// Note that those causal attention kernels use fp16 accumulation. There is potential accuracy drop using those kernels.
+constexpr const char* kEnableFusedCausalAttention = "ORT_ENABLE_FUSED_CAUSAL_ATTENTION";
+
+// Environment variable to enable or disable TRT flash attention. This applies to both self and causal attention. Default is 0 (enabled).
+constexpr const char* kDisableTrtFlashAttention = "ORT_DISABLE_TRT_FLASH_ATTENTION";
+
+// Environment variable to enable or disable cutlass memory efficient attention. Default is 0 (enabled).
+constexpr const char* kDisableMemoryEfficientAttention = "ORT_DISABLE_MEMORY_EFFICIENT_ATTENTION";
+
+// Minimum sequence length to enable memory efficient attention in FP32.
+constexpr int kMinSequenceLengthForMemoryEfficientAttentionFp32 = 256;
 
 }  // namespace attention
 
