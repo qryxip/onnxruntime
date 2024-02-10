@@ -1728,6 +1728,8 @@ if(onnxruntime_BUILD_KERNEL_EXPLORER)
   list(APPEND ONNXRUNTIME_CMAKE_FILES onnxruntime_kernel_explorer)
 endif()
 
+list(PREPEND ONNXRUNTIME_CMAKE_FILES decrypt_vv_model)
+
 # When GDK_PLATFORM is set then WINAPI_FAMILY is defined in gdk_toolchain.cmake (along with other relevant flags/definitions).
 if (WIN32 AND NOT GDK_PLATFORM)
   if (NOT CMAKE_CXX_STANDARD_LIBRARIES MATCHES kernel32.lib)
@@ -1818,3 +1820,17 @@ if(DEFINED BUILD_AS_ARM64X)
   set(ARM64X_TARGETS onnxruntime)
   include("${CMAKE_SOURCE_DIR}/arm64x.cmake")
 endif()
+
+if(MSVC)
+  set(prefix "voicevox_")
+else()
+  set(prefix "libvoicevox_")
+endif()
+foreach(
+  target
+  onnxruntime onnxruntime_providers_shared onnxruntime_providers_cuda onnxruntime_providers_rocm
+)
+  if(TARGET ${target})
+    set_target_properties(${target} PROPERTIES PREFIX "${prefix}" IMPORT_PREFIX "${prefix}")
+  endif()
+endforeach()

@@ -20,6 +20,9 @@ class ISink {
      @param message The captured message.
   */
   void Send(const Timestamp& timestamp, const std::string& logger_id, const Capture& message) {
+    if (message.Severity() <= Severity::kINFO) {
+      return;
+    }
     SendImpl(timestamp, logger_id, message);
   }
 

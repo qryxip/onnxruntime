@@ -86,6 +86,8 @@
 #include "orttraining/core/optimizer/memory_optimizer/memory_optimizer.h"
 #endif
 
+#include "../../decrypt_vv_model/target/decrypt_vv_model/include/decrypt_vv_model.h"
+
 using namespace ONNX_NAMESPACE;
 using namespace onnxruntime::common;
 
@@ -981,6 +983,11 @@ common::Status InferenceSession::Load(const void* model_data, int model_data_len
                            "ModelProto corresponding to the model to be loaded has already been parsed. "
                            "Invoke Load().");
   }
+
+  const auto decrypt_opts = session_options_.config_options.GetConfigOrDefault("session.decrypt_vv_model", "");
+  const auto decrypted = decrypt_vv_model::decrypt(rust::Slice(static_cast<const uint8_t*>(model_data), model_data_len), decrypt_opts);
+  model_data = static_cast<const void*>(decrypted.data());
+  model_data_len = decrypted.size();
 
   auto loader = [this, model_data, model_data_len](std::shared_ptr<onnxruntime::Model>& model) {
     ModelProto model_proto;
