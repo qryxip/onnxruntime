@@ -21,28 +21,28 @@ mkdir $BINARY_DIR/$ARTIFACT_NAME/lib
 mkdir $BINARY_DIR/$ARTIFACT_NAME/include
 echo "Directories created"
 cp $BINARY_DIR/$BUILD_CONFIG/$LIB_NAME $BINARY_DIR/$ARTIFACT_NAME/lib
-if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_cuda.so" ]]; then
-    cp $BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_shared.so $BINARY_DIR/$ARTIFACT_NAME/lib
-    cp $BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_cuda.so $BINARY_DIR/$ARTIFACT_NAME/lib
+if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_cuda.so" ]]; then
+    cp $BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_shared.so $BINARY_DIR/$ARTIFACT_NAME/lib
+    cp $BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_cuda.so $BINARY_DIR/$ARTIFACT_NAME/lib
 fi
-if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_tensorrt.so" ]]; then
-    cp $BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_tensorrt.so $BINARY_DIR/$ARTIFACT_NAME/lib
+if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_tensorrt.so" ]]; then
+    cp $BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_tensorrt.so $BINARY_DIR/$ARTIFACT_NAME/lib
 fi
-if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_rocm.so" ]]; then
-    cp $BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_shared.so $BINARY_DIR/$ARTIFACT_NAME/lib
-    cp $BINARY_DIR/$BUILD_CONFIG/libonnxruntime_providers_rocm.so $BINARY_DIR/$ARTIFACT_NAME/lib
+if [[ -f "$BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_rocm.so" ]]; then
+    cp $BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_shared.so $BINARY_DIR/$ARTIFACT_NAME/lib
+    cp $BINARY_DIR/$BUILD_CONFIG/libvoicevox_onnxruntime_providers_rocm.so $BINARY_DIR/$ARTIFACT_NAME/lib
 fi
 echo "Copy debug symbols in a separate file and strip the original binary."
 if [[ $LIB_NAME == *.dylib ]]
 then
     dsymutil $BINARY_DIR/$ARTIFACT_NAME/lib/$LIB_NAME -o $BINARY_DIR/$ARTIFACT_NAME/lib/$LIB_NAME.dSYM
     strip -S $BINARY_DIR/$ARTIFACT_NAME/lib/$LIB_NAME
-    ln -s $LIB_NAME $BINARY_DIR/$ARTIFACT_NAME/lib/libonnxruntime.dylib
+    ln -s $LIB_NAME $BINARY_DIR/$ARTIFACT_NAME/lib/libvoicevox_onnxruntime.dylib
     # copy the CoreML EP header for macOS build (libs with .dylib ext)
     cp $SOURCE_DIR/include/onnxruntime/core/providers/coreml/coreml_provider_factory.h  $BINARY_DIR/$ARTIFACT_NAME/include
 elif [[ $LIB_NAME == *.so.* ]]
 then
-    ln -s $LIB_NAME $BINARY_DIR/$ARTIFACT_NAME/lib/libonnxruntime.so
+    ln -s $LIB_NAME $BINARY_DIR/$ARTIFACT_NAME/lib/libvoicevox_onnxruntime.so
 fi
 cp $SOURCE_DIR/include/onnxruntime/core/session/onnxruntime_*.h $BINARY_DIR/$ARTIFACT_NAME/include
 cp $SOURCE_DIR/include/onnxruntime/core/framework/provider_options.h  $BINARY_DIR/$ARTIFACT_NAME/include

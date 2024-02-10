@@ -1,0 +1,20 @@
+[package]
+name = "decrypt_vv_model"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+cxx = "1.0.122"
+derive_more = "0.99.17"
+nrot = "2.0.0"
+
+[build-dependencies]
+anyhow = "1.0.86"
+cargo_metadata = "0.18.1"
+duct = "0.13.7"
+fs-err = "2.11.0"
+itertools = "0.13.0"
+semver = "1.0.23"

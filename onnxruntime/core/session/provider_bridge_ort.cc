@@ -1154,7 +1154,7 @@ struct ProviderSharedLibrary {
       return;
 
     auto full_path = Env::Default().GetRuntimePath() +
-                     PathString(LIBRARY_PREFIX ORT_TSTR("onnxruntime_providers_shared") LIBRARY_EXTENSION);
+                     PathString(LIBRARY_PREFIX ORT_TSTR("voicevox_onnxruntime_providers_shared") LIBRARY_EXTENSION);
     ORT_THROW_IF_ERROR(Env::Default().LoadDynamicLibrary(full_path, true /*shared_globals on unix*/, &handle_));
 
     void (*PProvider_SetHost)(void*);
@@ -1252,7 +1252,7 @@ struct ProviderLibrary {
   ORT_DISALLOW_COPY_AND_ASSIGNMENT(ProviderLibrary);
 };
 
-static ProviderLibrary s_library_cuda(LIBRARY_PREFIX ORT_TSTR("onnxruntime_providers_cuda") LIBRARY_EXTENSION
+static ProviderLibrary s_library_cuda(LIBRARY_PREFIX ORT_TSTR("voicevox_onnxruntime_providers_cuda") LIBRARY_EXTENSION
 #ifndef _WIN32
                                       ,
                                       false /* unload - On Linux if we unload the cuda shared provider we crash */
@@ -1271,7 +1271,7 @@ static ProviderLibrary s_library_cann(LIBRARY_PREFIX ORT_TSTR("onnxruntime_provi
                                       false /* unload - On Linux if we unload the cann shared provider we crash */
 #endif
 );
-static ProviderLibrary s_library_rocm(LIBRARY_PREFIX ORT_TSTR("onnxruntime_providers_rocm") LIBRARY_EXTENSION
+static ProviderLibrary s_library_rocm(LIBRARY_PREFIX ORT_TSTR("voicevox_onnxruntime_providers_rocm") LIBRARY_EXTENSION
 #ifndef _WIN32
                                       ,
                                       false /* unload - On Linux if we unload the rocm shared provider we crash */
